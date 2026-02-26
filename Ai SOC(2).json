@@ -1,0 +1,342 @@
+{
+  "name": "Ai SOC",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -32,
+        128
+      ],
+      "id": "a2dc02f3-8264-44b0-a558-9fc7acd3306d",
+      "name": "Webhook",
+      "webhookId": "2da3c172-424a-4d12-8d57-074fd8c23add"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3-flash-preview",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3-flash-preview"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Act as an experienced Level 1 SOC Analyst. You are triaging a security alert from a Wazuh SIEM. Your goal is to provide a clear, technical, and high-signal summary for a human Tier 2 responder.\n\nAlert Context:\n\n    Rule Name: {{ $json.body.rule.description }}\n\n    Raw Log Data: {{ $json.body.full_log }}\n\n    Agent Host: {{ $json.body.agent.name }} | IP: {{ $json.body.agent.ip }}\n\nTask:\nAnalyze the raw log for indicators of compromise (IoCs). Provide your response in the following STRICT format:\n\n    VERDICT: [True Positive | False Positive | Benign Positive]\n\n    SEVERITY: [Low | Medium | High | Critical]\n\n    SUMMARY: (1-2 sentences technical description of the activity.)\n\n    REASONING: (Why did you choose this verdict? Mention specific log artifacts like IP addresses, failed attempts, or commands.)\n\n    NEXT ACTION: (e.g., \"Block Source IP,\" \"Reset User Password,\" or \"No action needed.\")\n\nConstraint: Do not be conversational. Do not say \"Here is your report.\" Just provide the five points above."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        384,
+        -48
+      ],
+      "id": "0f9900b7-c97a-4d7c-addb-d25c7aed5dce",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "lDBpwB9RrMJFiwQg",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "=🚨 **AI-SOC-ALERT** 🚨\n---\n**Detection:** {{ $node[\"Webhook\"].json.body.rule?.description || \"Manual Test\" }}\n**AI Analysis:** {{ $json.content.parts[0].text }}\n---\n**System:** `{{ $node[\"Webhook\"].json.body.agent?.name || \"No Agent\" }}` | **IP:** `{{ $node[\"Webhook\"].json.body.agent?.ip || \"N/A\" }}`",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        0
+      ],
+      "id": "9c050b9d-d4f3-472d-acd8-feebcbe6f3c8",
+      "name": "Discord",
+      "webhookId": "7781fac1-ce5f-4841-ad53-fb673a952ad8",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "s4ahRuMor3NDPEPE",
+          "name": "Discord Webhook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "Blocks",
+              "value": "=🚨 *AI-SOC-ALERT* 🚨\n---\n*Detection:* {{ $node[\"Webhook\"].json.body.rule?.description || \"Manual Test\" }}\n*AI Analysis:* {{ $json.content.parts[0].text }}\n---\n*System:* `{{ $node[\"Webhook\"].json.body.agent?.name || \"No Agent\" }}` | *IP:* `{{ $node[\"Webhook\"].json.body.agent?.ip || \"N/A\" }}`"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        736,
+        -336
+      ],
+      "id": "f83804cc-0ac7-461c-b956-1f9c78eab451",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "url": "=https://www.virustotal.com/api/v3/ip_addresses/",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "virusTotalApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        144,
+        -112
+      ],
+      "id": "b9508268-81a8-409d-a40c-f2235e14b55d",
+      "name": "VirusTotal HTTP Request",
+      "extendsCredential": "virusTotalApi",
+      "credentials": {
+        "virusTotalApi": {
+          "id": "4cOJIw3yyiGlq5DV",
+          "name": "VirusTotal account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1FjKEBhhXs8Nm9udVZCBUplpSNXoaVbeTlQewCA6GF7I",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FjKEBhhXs8Nm9udVZCBUplpSNXoaVbeTlQewCA6GF7I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FjKEBhhXs8Nm9udVZCBUplpSNXoaVbeTlQewCA6GF7I/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Attacker IP",
+              "displayName": "Attacker IP",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Detection",
+              "displayName": "Detection",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Gemini Verdict",
+              "displayName": "Gemini Verdict",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        864,
+        -112
+      ],
+      "id": "80ad7662-e9d9-48bf-9c93-9bb5f21e69a9",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "yBfI7AlScPU8FHBc",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "=echo \"AI decided to block IP: {{ $node[\"Webhook\"].json.body.data.srcip }} at $(date)\" >> /tmp/ai_block_test.txt"
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        768,
+        320
+      ],
+      "id": "13b67327-f83f-40d1-8d1a-14111c533ec4",
+      "name": "Execute a command",
+      "credentials": {
+        "sshPassword": {
+          "id": "LPLzKH775ot8rjvu",
+          "name": "SSH Password account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9e10651d-6f23-4c88-913f-f8b73afa2de9",
+              "leftValue": "={{ $node[\"Message a model\"].json.content.parts[0].text }}",
+              "rightValue": "True Positive",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        416
+      ],
+      "id": "f13aa28b-2b07-4554-9923-f89c12231be8",
+      "name": "If"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "VirusTotal HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VirusTotal HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Execute a command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "45d587ea-fcf0-4f86-af61-055e3c93a81a",
+  "meta": {
+    "instanceId": "0ed71b10f8842e8575c912b512c353e964656c8c80335151d70a77e74807a940"
+  },
+  "id": "8ERUvT5WGL8orWyE",
+  "tags": []
+}
